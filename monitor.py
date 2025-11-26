@@ -35,6 +35,10 @@ class ThrottleMonitor:
             vcfg.get("downloader_key", ""),
             vcfg.get("enable_value", "true"),
             vcfg.get("disable_value", "false"),
+            vcfg.get("host", ""),
+            vcfg.get("port", 22),
+            vcfg.get("username", ""),
+            vcfg.get("password", ""),
         )
 
     def start(self):

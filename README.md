@@ -34,6 +34,7 @@ python app.py  # 或部署为 systemd/pm2
 在面板填写 Vertex 配置文件路径与下载器键名：
 - 限速时把 `键名=可用值` 替换为 `键名=禁用值`
 - 恢复后再替换回去
+- 若 Vertex 不在同一台 VPS，可填写远程主机、端口、SSH 用户和密码，通过 SFTP 直接改写远程配置文件
 
 ## GitHub 配置存储
 启用后填写 `owner/repo`、分支和路径，保存时会通过 GitHub API 写入（需 PAT）。

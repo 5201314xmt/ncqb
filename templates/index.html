@@ -135,10 +135,16 @@
                     </div>
                     <div class="col-md-4">
                         <h5>Vertex 联动</h5>
-                        <div class="mb-2"><label class="form-label">配置文件路径</label><input class="form-control" name="vertex_path" value="{{ cfg.vertex.config_path }}" placeholder="vt 配置文件"></div>
+                        <div class="mb-2"><label class="form-label">配置文件路径</label><input class="form-control" name="vertex_path" value="{{ cfg.vertex.config_path }}" placeholder="vt 配置文件 (可远程)"></div>
                         <div class="mb-2"><label class="form-label">下载器键名</label><input class="form-control" name="vertex_key" value="{{ cfg.vertex.downloader_key }}" placeholder="如 downloader_enabled"></div>
                         <div class="mb-2"><label class="form-label">可用值</label><input class="form-control" name="vertex_enable" value="{{ cfg.vertex.enable_value }}"></div>
                         <div class="mb-2"><label class="form-label">禁用值</label><input class="form-control" name="vertex_disable" value="{{ cfg.vertex.disable_value }}"></div>
+                        <div class="row g-2">
+                            <div class="col-md-6"><label class="form-label">远程主机</label><input class="form-control" name="vertex_host" value="{{ cfg.vertex.host }}" placeholder="不填则本地文件"></div>
+                            <div class="col-md-6"><label class="form-label">端口</label><input class="form-control" name="vertex_port" value="{{ cfg.vertex.port }}" type="number"></div>
+                        </div>
+                        <div class="mb-2"><label class="form-label">用户名</label><input class="form-control" name="vertex_username" value="{{ cfg.vertex.username }}" placeholder="SSH 用户"></div>
+                        <div class="mb-2"><label class="form-label">密码</label><input class="form-control" name="vertex_password" value="{{ cfg.vertex.password }}" placeholder="SSH 密码"></div>
                     </div>
                 </div>
                 <div class="text-end mt-3">

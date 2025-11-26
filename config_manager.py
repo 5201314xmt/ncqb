@@ -38,7 +38,11 @@ DEFAULT_CONFIG = {
         "config_path": "",
         "downloader_key": "",
         "disable_value": "false",
-        "enable_value": "true"
+        "enable_value": "true",
+        "host": "",
+        "port": 22,
+        "username": "",
+        "password": ""
     }
 }
 
@@ -51,6 +55,18 @@ class ConfigManager:
         self.github_storage = GithubStorage()
         self.load()
 
+    def _merge_defaults(self, data: Dict[str, Any], default: Dict[str, Any]) -> Dict[str, Any]:
+        merged: Dict[str, Any] = {}
+        for key, value in default.items():
+            if isinstance(value, dict):
+                merged[key] = self._merge_defaults(data.get(key, {}), value)
+            else:
+                merged[key] = data.get(key, value)
+        for key, value in data.items():
+            if key not in merged:
+                merged[key] = value
+        return merged
+
     def load(self) -> Dict[str, Any]:
         with self._lock:
             if not os.path.exists(self.path):
@@ -59,7 +75,7 @@ class ConfigManager:
             else:
                 with open(self.path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                self._config = {**DEFAULT_CONFIG, **data}
+                self._config = self._merge_defaults(data, DEFAULT_CONFIG)
         return self._config
 
     def save(self) -> None:

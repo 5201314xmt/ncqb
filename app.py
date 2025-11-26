@@ -91,6 +91,10 @@ def create_app():
             "downloader_key": data.get("vertex_key", ""),
             "enable_value": data.get("vertex_enable", "true"),
             "disable_value": data.get("vertex_disable", "false"),
+            "host": data.get("vertex_host", ""),
+            "port": int(data.get("vertex_port", vertex_cfg.get("port", 22))),
+            "username": data.get("vertex_username", ""),
+            "password": data.get("vertex_password", ""),
         })
         new_conf = {
             "soap_wsdl_url": data.get("soap_wsdl_url", cfg.get("soap_wsdl_url")),
