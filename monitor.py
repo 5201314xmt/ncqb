@@ -41,12 +41,18 @@ class ThrottleMonitor:
             vcfg.get("port", 22),
             vcfg.get("username", ""),
             vcfg.get("password", ""),
+            vcfg.get("api_url", ""),
+            vcfg.get("api_key", ""),
+            vcfg.get("downloader_id", ""),
         )
 
     def start(self):
         threading.Thread(target=self._netcup_loop, daemon=True).start()
         threading.Thread(target=self._scp_loop, daemon=True).start()
         threading.Thread(target=self._log_cleanup_loop, daemon=True).start()
+
+    def refresh_vertex(self):
+        self.vertex = self._build_vertex(self.cfg_manager.get())
 
     def _netcup_loop(self):
         while not self.stop_event.is_set():

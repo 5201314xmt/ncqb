@@ -135,6 +135,10 @@
                     </div>
                     <div class="col-md-4">
                         <h5>Vertex 联动</h5>
+                        <div class="mb-2"><label class="form-label">Vertex API 地址</label><input class="form-control" name="vertex_api_url" value="{{ cfg.vertex.api_url }}" placeholder="如 https://vertex.example.com"></div>
+                        <div class="mb-2"><label class="form-label">API Key</label><input class="form-control" name="vertex_api_key" value="{{ cfg.vertex.api_key }}" placeholder="在 Vertex 生成"></div>
+                        <div class="mb-2"><label class="form-label">下载器 ID</label><input class="form-control" name="vertex_downloader_id" value="{{ cfg.vertex.downloader_id }}" placeholder="待禁用/恢复的 ID"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="testVertex()">获取 ID 列表</button>
                         <div class="mb-2"><label class="form-label">配置文件路径</label><input class="form-control" name="vertex_path" value="{{ cfg.vertex.config_path }}" placeholder="vt 配置文件 (可远程)"></div>
                         <div class="mb-2"><label class="form-label">下载器键名</label><input class="form-control" name="vertex_key" value="{{ cfg.vertex.downloader_key }}" placeholder="如 downloader_enabled"></div>
                         <div class="mb-2"><label class="form-label">可用值</label><input class="form-control" name="vertex_enable" value="{{ cfg.vertex.enable_value }}"></div>
@@ -156,5 +160,17 @@
         </div>
     </div>
 </div>
+<script>
+function testVertex() {
+    fetch('/api/test_vertex').then(r => r.json()).then(data => {
+        if (!data.ok) {
+            alert('测试失败: ' + (data.error || '未知错误'));
+            return;
+        }
+        const list = data.downloaders.map(d => `${d.id} - ${d.name} (enabled=${d.enabled})`).join('\n');
+        alert('下载器列表:\n' + list);
+    }).catch(() => alert('请求失败'));
+}
+</script>
 </body>
 </html>

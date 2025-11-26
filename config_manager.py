@@ -44,7 +44,10 @@ DEFAULT_CONFIG = {
         "host": "",
         "port": 22,
         "username": "",
-        "password": ""
+        "password": "",
+        "api_url": "",
+        "api_key": "",
+        "downloader_id": "",
     }
 }
 

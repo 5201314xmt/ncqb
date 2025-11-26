@@ -97,6 +97,9 @@ def create_app():
             "port": int(data.get("vertex_port", vertex_cfg.get("port", 22))),
             "username": data.get("vertex_username", ""),
             "password": data.get("vertex_password", ""),
+            "api_url": data.get("vertex_api_url", ""),
+            "api_key": data.get("vertex_api_key", ""),
+            "downloader_id": data.get("vertex_downloader_id", ""),
         })
         new_conf = {
             "soap_wsdl_url": data.get("soap_wsdl_url", cfg.get("soap_wsdl_url")),
@@ -120,8 +123,24 @@ def create_app():
             "vertex": vertex_cfg,
         }
         app.cfg_manager.update(new_conf, push_to_github=True)
+        app.monitor.refresh_vertex()
         flash("配置已更新并写入本地/GitHub")
         return redirect(url_for("index"))
+
+    @app.route("/api/test_vertex", methods=["GET"])
+    def test_vertex():
+        app.monitor.refresh_vertex()
+        vertex = app.monitor.vertex
+        if not vertex:
+            return jsonify({"ok": False, "error": "Vertex 未配置"}), 400
+        downloaders = vertex.list_downloaders()
+        if not downloaders:
+            return jsonify({"ok": False, "error": "获取下载器列表失败"}), 400
+        simplified = [
+            {"id": d.get("id"), "name": d.get("name"), "enabled": d.get("enabled")}
+            for d in downloaders
+        ]
+        return jsonify({"ok": True, "downloaders": simplified})
 
     @app.route("/logs")
     def logs():
