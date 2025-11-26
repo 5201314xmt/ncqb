@@ -1,36 +1,152 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>Netcup 限速监控</title>
-<style>
-body { font-family: Arial; margin: 20px; }
-table { border-collapse: collapse; width: 100%; }
-th, td { border: 1px solid #ccc; padding: 8px; }
-th { background: #eee; }
-.thr { color: red; font-weight: bold; }
-.ok { color: green; font-weight: bold; }
-</style>
+    <meta charset="UTF-8">
+    <title>Netcup Throttle Guard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <style>
+        body { background: #f5f7fb; }
+        .card { box-shadow: 0 3px 12px rgba(0,0,0,0.05); }
+        .hero { background: linear-gradient(135deg, #4f46e5, #16a085); color: #fff; border-radius: 12px; padding: 24px; }
+        .badge-status { font-size: 0.95rem; }
+    </style>
 </head>
-<body>
-<h2>Netcup 限速监控面板</h2>
+<body class="p-3 p-lg-5">
+<div class="container">
+    <div class="hero mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h2 class="mb-1">Netcup 限速守护</h2>
+                <p class="mb-0">一键部署 / GitHub 配置 / qB&Vertex 联动</p>
+            </div>
+            <div class="text-end">
+                <div>总节点：<strong>{{ total }}</strong></div>
+                <div>正常：<span class="badge bg-success badge-status">{{ normal }}</span> / 限速：<span class="badge bg-danger badge-status">{{ throttled }}</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header">VPS 状态</div>
+                <div class="card-body p-0">
+                    <table class="table mb-0 align-middle">
+                        <thead class="table-light">
+                        <tr><th>IP</th><th>名称</th><th>归属</th><th>状态</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for ip, s in status.items() %}
+                            <tr>
+                                <td>{{ ip }}</td>
+                                <td>{{ s.name }}</td>
+                                <td>{{ s.owner }}</td>
+                                <td>
+                                    {% if s.throttled %}
+                                        <span class="badge bg-danger">限速</span>
+                                    {% else %}
+                                        <span class="badge bg-success">正常</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-center text-muted">暂无数据</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header">操作</div>
+                <div class="card-body">
+                    <a class="btn btn-outline-primary w-100" href="/logs">查看日志</a>
+                </div>
+            </div>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-success">{{ messages[0] }}</div>
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
 
-<table>
-<tr><th>IP</th><th>名称</th><th>状态</th></tr>
-{% for ip, s in status.items() %}
-<tr>
-<td>{{ ip }}</td>
-<td>{{ s.name }}</td>
-<td>
-{% if s.throttled %}
-<span class="thr">限速中</span>
-{% else %}
-<span class="ok">正常</span>
-{% endif %}
-</td>
-</tr>
-{% endfor %}
-</table>
-
+    <div class="card mb-3">
+        <div class="card-header">配置面板</div>
+        <div class="card-body">
+            <form method="post" action="/config">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h5>Netcup</h5>
+                        <div class="mb-2"><label class="form-label">WSDL</label><input class="form-control" name="soap_wsdl_url" value="{{ cfg.soap_wsdl_url }}" required></div>
+                        <div class="mb-2"><label class="form-label">登录</label><input class="form-control" name="nc_login" value="{{ cfg.netcup_accounts[0].loginName if cfg.netcup_accounts else '' }}"></div>
+                        <div class="mb-2"><label class="form-label">密码</label><input class="form-control" name="nc_password" value="{{ cfg.netcup_accounts[0].password if cfg.netcup_accounts else '' }}"></div>
+                        <div class="mb-2"><label class="form-label">备注</label><input class="form-control" name="nc_label" value="{{ cfg.netcup_accounts[0].label if cfg.netcup_accounts else '' }}"></div>
+                        <div class="mb-2"><label class="form-label">轮询秒数</label><input type="number" class="form-control" name="poll_interval_seconds" value="{{ cfg.poll_interval_seconds }}"></div>
+                        <div class="mb-2"><label class="form-label">限速动作</label>
+                            <select class="form-select" name="throttle_action">
+                                <option value="pause" {% if cfg.throttle_action=='pause' %}selected{% endif %}>暂停种子</option>
+                                <option value="delete" {% if cfg.throttle_action=='delete' %}selected{% endif %}>删除种子</option>
+                            </select>
+                        </div>
+                        <div class="mb-2 form-check">
+                            <input class="form-check-input" type="checkbox" name="restore_on_normal" {% if cfg.qb_settings.restore_on_normal %}checked{% endif %}>
+                            <label class="form-check-label">恢复正常时自动 Resume</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Telegram</h5>
+                        <div class="mb-2"><label class="form-label">Bot Token</label><input class="form-control" name="tg_token" value="{{ cfg.telegram.bot_token }}"></div>
+                        <div class="mb-2"><label class="form-label">Chat ID</label><input class="form-control" name="tg_chat_id" value="{{ cfg.telegram.chat_id }}"></div>
+                        <h5 class="mt-3">qBittorrent</h5>
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="checkbox" name="use_scp_ip" {% if cfg.qb_settings.use_scp_ip %}checked{% endif %}>
+                            <label class="form-check-label">使用 SCP 拉取的 IP</label>
+                        </div>
+                        <div class="mb-2"><label class="form-label">手动 IP</label><input class="form-control" name="manual_host" value="{{ cfg.qb_settings.manual_host }}" placeholder="覆盖 SCP IP"></div>
+                        <div class="mb-2"><label class="form-label">端口</label><input type="number" class="form-control" name="qb_port" value="{{ cfg.qb_settings.port }}"></div>
+                        <div class="mb-2"><label class="form-label">用户名</label><input class="form-control" name="qb_username" value="{{ cfg.qb_settings.username }}"></div>
+                        <div class="mb-2"><label class="form-label">密码</label><input class="form-control" name="qb_password" value="{{ cfg.qb_settings.password }}"></div>
+                        <h5 class="mt-3">SCP 获取 IP</h5>
+                        <div class="mb-2"><label class="form-label">主机</label><input class="form-control" name="scp_host" value="{{ cfg.scp.host }}"></div>
+                        <div class="mb-2"><label class="form-label">端口</label><input type="number" class="form-control" name="scp_port" value="{{ cfg.scp.port }}"></div>
+                        <div class="mb-2"><label class="form-label">用户名</label><input class="form-control" name="scp_username" value="{{ cfg.scp.username }}"></div>
+                        <div class="mb-2"><label class="form-label">密码</label><input class="form-control" name="scp_password" value="{{ cfg.scp.password }}"></div>
+                        <div class="mb-2"><label class="form-label">远程文件路径</label><input class="form-control" name="scp_remote" value="{{ cfg.scp.remote_ip_path }}" placeholder="文件内容为IP"></div>
+                        <div class="mb-2"><label class="form-label">轮询秒数</label><input type="number" class="form-control" name="scp_interval" value="{{ cfg.scp.poll_interval_seconds }}"></div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <h5>日志</h5>
+                        <div class="mb-2"><label class="form-label">保留天数</label><input type="number" class="form-control" name="log_retention_days" value="{{ cfg.log_retention_days }}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <h5>GitHub 配置存储</h5>
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="checkbox" name="github_enabled" {% if cfg.github_storage.enabled %}checked{% endif %}>
+                            <label class="form-check-label">开启同步</label>
+                        </div>
+                        <div class="mb-2"><label class="form-label">Token</label><input class="form-control" name="github_token" value="{{ cfg.github_storage.token }}"></div>
+                        <div class="mb-2"><label class="form-label">仓库 (owner/repo)</label><input class="form-control" name="github_repo" value="{{ cfg.github_storage.repo }}"></div>
+                        <div class="mb-2"><label class="form-label">分支</label><input class="form-control" name="github_branch" value="{{ cfg.github_storage.branch }}"></div>
+                        <div class="mb-2"><label class="form-label">路径</label><input class="form-control" name="github_path" value="{{ cfg.github_storage.path }}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <h5>Vertex 联动</h5>
+                        <div class="mb-2"><label class="form-label">配置文件路径</label><input class="form-control" name="vertex_path" value="{{ cfg.vertex.config_path }}" placeholder="vt 配置文件"></div>
+                        <div class="mb-2"><label class="form-label">下载器键名</label><input class="form-control" name="vertex_key" value="{{ cfg.vertex.downloader_key }}" placeholder="如 downloader_enabled"></div>
+                        <div class="mb-2"><label class="form-label">可用值</label><input class="form-control" name="vertex_enable" value="{{ cfg.vertex.enable_value }}"></div>
+                        <div class="mb-2"><label class="form-label">禁用值</label><input class="form-control" name="vertex_disable" value="{{ cfg.vertex.disable_value }}"></div>
+                    </div>
+                </div>
+                <div class="text-end mt-3">
+                    <button class="btn btn-primary">保存配置</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 </body>
 </html>
