@@ -91,6 +91,8 @@ def create_app():
             "downloader_key": data.get("vertex_key", ""),
             "enable_value": data.get("vertex_enable", "true"),
             "disable_value": data.get("vertex_disable", "false"),
+            "enable_command": data.get("vertex_enable_cmd", ""),
+            "disable_command": data.get("vertex_disable_cmd", ""),
             "host": data.get("vertex_host", ""),
             "port": int(data.get("vertex_port", vertex_cfg.get("port", 22))),
             "username": data.get("vertex_username", ""),

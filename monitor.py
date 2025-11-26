@@ -35,6 +35,8 @@ class ThrottleMonitor:
             vcfg.get("downloader_key", ""),
             vcfg.get("enable_value", "true"),
             vcfg.get("disable_value", "false"),
+            vcfg.get("enable_command", ""),
+            vcfg.get("disable_command", ""),
             vcfg.get("host", ""),
             vcfg.get("port", 22),
             vcfg.get("username", ""),
@@ -142,8 +144,11 @@ class ThrottleMonitor:
             else:
                 message_parts.append(f"qB {action} 失败")
         if self.vertex:
-            self.vertex.disable()
-            message_parts.append("已关闭 Vertex 下载器")
+            vertex_ok = self.vertex.disable()
+            if vertex_ok:
+                message_parts.append("已关闭 Vertex 下载器")
+            else:
+                message_parts.append("Vertex 下载器关闭失败")
         self.notifier.send(" | ".join(message_parts))
         logging.info("Throttle triggered for %s: %s", ip, message_parts)
 
@@ -154,8 +159,11 @@ class ThrottleMonitor:
             qb_ok = self.qb.apply_action(base_url, username, password, "resume")
             message_parts.append("qB resume 成功" if qb_ok else "qB resume 失败")
         if self.vertex:
-            self.vertex.enable()
-            message_parts.append("已恢复 Vertex 下载器")
+            vertex_ok = self.vertex.enable()
+            if vertex_ok:
+                message_parts.append("已恢复 Vertex 下载器")
+            else:
+                message_parts.append("Vertex 下载器恢复失败")
         self.notifier.send(" | ".join(message_parts))
         logging.info("Throttle recovered for %s: %s", ip, message_parts)
 

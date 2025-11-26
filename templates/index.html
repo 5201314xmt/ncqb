@@ -139,6 +139,8 @@
                         <div class="mb-2"><label class="form-label">下载器键名</label><input class="form-control" name="vertex_key" value="{{ cfg.vertex.downloader_key }}" placeholder="如 downloader_enabled"></div>
                         <div class="mb-2"><label class="form-label">可用值</label><input class="form-control" name="vertex_enable" value="{{ cfg.vertex.enable_value }}"></div>
                         <div class="mb-2"><label class="form-label">禁用值</label><input class="form-control" name="vertex_disable" value="{{ cfg.vertex.disable_value }}"></div>
+                        <div class="mb-2"><label class="form-label">启用命令 (可选)</label><input class="form-control" name="vertex_enable_cmd" value="{{ cfg.vertex.enable_command }}" placeholder="留空则改写配置文件"></div>
+                        <div class="mb-2"><label class="form-label">禁用命令 (可选)</label><input class="form-control" name="vertex_disable_cmd" value="{{ cfg.vertex.disable_command }}" placeholder="如: docker exec ..."></div>
                         <div class="row g-2">
                             <div class="col-md-6"><label class="form-label">远程主机</label><input class="form-control" name="vertex_host" value="{{ cfg.vertex.host }}" placeholder="不填则本地文件"></div>
                             <div class="col-md-6"><label class="form-label">端口</label><input class="form-control" name="vertex_port" value="{{ cfg.vertex.port }}" type="number"></div>

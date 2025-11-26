@@ -39,6 +39,8 @@ DEFAULT_CONFIG = {
         "downloader_key": "",
         "disable_value": "false",
         "enable_value": "true",
+        "disable_command": "",
+        "enable_command": "",
         "host": "",
         "port": 22,
         "username": "",
