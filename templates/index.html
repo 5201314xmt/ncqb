@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Netcup 限速监控</title>
+<style>
+body { font-family: Arial; margin: 20px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 8px; }
+th { background: #eee; }
+.thr { color: red; font-weight: bold; }
+.ok { color: green; font-weight: bold; }
+</style>
+</head>
+<body>
+<h2>Netcup 限速监控面板</h2>
+
+<table>
+<tr><th>IP</th><th>名称</th><th>状态</th></tr>
+{% for ip, s in status.items() %}
+<tr>
+<td>{{ ip }}</td>
+<td>{{ s.name }}</td>
+<td>
+{% if s.throttled %}
+<span class="thr">限速中</span>
+{% else %}
+<span class="ok">正常</span>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</table>
+
+</body>
+</html>
