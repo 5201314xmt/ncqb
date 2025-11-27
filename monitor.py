@@ -3,7 +3,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import paramiko
 from scp import SCPClient
@@ -20,7 +20,8 @@ class ThrottleMonitor:
     def __init__(self, cfg_manager: ConfigManager, notifier: TelegramNotifier):
         self.cfg_manager = cfg_manager
         cfg = cfg_manager.get()
-        self.nc = NetcupClient(cfg.get("soap_wsdl_url"))
+        self.nc = None
+        self.nc_wsdl = None
         self.qb = QbClient()
         self.notifier = notifier
         self.state: Dict[str, Dict] = {}
@@ -53,6 +54,10 @@ class ThrottleMonitor:
 
     def refresh_vertex(self):
         self.vertex = self._build_vertex(self.cfg_manager.get())
+
+    def refresh_netcup(self):
+        self.nc = None
+        self.nc_wsdl = None
 
     def _netcup_loop(self):
         while not self.stop_event.is_set():
@@ -114,7 +119,11 @@ class ThrottleMonitor:
 
     def check_throttle(self):
         cfg = self.cfg_manager.get()
-        new_status = self.nc.fetch_status_for_accounts(cfg.get("netcup_accounts", []))
+        client = self._netcup_client(cfg)
+        if not client:
+            logging.warning("skip throttle check: Netcup WSDL 未配置或初始化失败")
+            return
+        new_status = client.fetch_status_for_accounts(cfg.get("netcup_accounts", []))
         qb_cfg = cfg.get("qb_settings", {})
         action = cfg.get("throttle_action", "pause")
         base_url = self._build_qb_url(cfg)
@@ -176,3 +185,17 @@ class ThrottleMonitor:
     def get_snapshot(self):
         with self.lock:
             return dict(self.state)
+
+    def _netcup_client(self, cfg: Dict) -> Optional[NetcupClient]:
+        wsdl = cfg.get("soap_wsdl_url")
+        if not wsdl:
+            return None
+        if self.nc and self.nc_wsdl == wsdl:
+            return self.nc
+        try:
+            self.nc = NetcupClient(wsdl)
+            self.nc_wsdl = wsdl
+            return self.nc
+        except Exception as exc:
+            logging.error("初始化 Netcup 客户端失败: %s", exc)
+            return None

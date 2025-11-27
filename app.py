@@ -123,6 +123,7 @@ def create_app():
             "vertex": vertex_cfg,
         }
         app.cfg_manager.update(new_conf, push_to_github=True)
+        app.monitor.refresh_netcup()
         app.monitor.refresh_vertex()
         flash("配置已更新并写入本地/GitHub")
         return redirect(url_for("index"))
