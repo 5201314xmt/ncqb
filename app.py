@@ -23,7 +23,6 @@ logging.getLogger().addHandler(file_handler)
 
 def create_app():
     cfg_manager = ConfigManager(BASE_DIR)
-    cfg_manager.sync_from_github()
     cfg = cfg_manager.get()
 
     notifier = TelegramNotifier(cfg.get("telegram", {}).get("bot_token", ""), cfg.get("telegram", {}).get("chat_id", ""))
@@ -57,7 +56,7 @@ def create_app():
 
     @app.route("/config", methods=["POST"])
     def update_config():
-        data = request.form.to_dict()
+        data = request.form
         cfg = app.cfg_manager.get()
         qb_settings = cfg.get("qb_settings", {})
         qb_settings.update({
@@ -77,14 +76,21 @@ def create_app():
             "remote_ip_path": data.get("scp_remote", ""),
             "poll_interval_seconds": int(data.get("scp_interval", scp_cfg.get("poll_interval_seconds", 300)))
         })
-        git_cfg = cfg.get("github_storage", {})
-        git_cfg.update({
-            "enabled": data.get("github_enabled") == "on",
-            "token": data.get("github_token", ""),
-            "repo": data.get("github_repo", ""),
-            "branch": data.get("github_branch", "main"),
-            "path": data.get("github_path", "config.json")
-        })
+        accounts = []
+        logins = data.getlist("nc_login")
+        passwords = data.getlist("nc_password")
+        labels = data.getlist("nc_label")
+        for login, pw, label in zip(logins, passwords, labels):
+            login = (login or "").strip()
+            pw = (pw or "").strip()
+            label = (label or "").strip()
+            if not login and not pw and not label:
+                continue
+            accounts.append({
+                "loginName": login,
+                "password": pw,
+                "label": label or login,
+            })
         vertex_cfg = cfg.get("vertex", {})
         vertex_cfg.update({
             "config_path": data.get("vertex_path", ""),
@@ -103,13 +109,7 @@ def create_app():
         })
         new_conf = {
             "soap_wsdl_url": data.get("soap_wsdl_url", cfg.get("soap_wsdl_url")),
-            "netcup_accounts": [
-                {
-                    "loginName": data.get("nc_login", ""),
-                    "password": data.get("nc_password", ""),
-                    "label": data.get("nc_label", "") or data.get("nc_login", "")
-                }
-            ],
+            "netcup_accounts": accounts,
             "poll_interval_seconds": int(data.get("poll_interval_seconds", cfg.get("poll_interval_seconds", 600))),
             "telegram": {
                 "bot_token": data.get("tg_token", ""),
@@ -119,12 +119,12 @@ def create_app():
             "scp": scp_cfg,
             "throttle_action": data.get("throttle_action", cfg.get("throttle_action", "pause")),
             "log_retention_days": int(data.get("log_retention_days", cfg.get("log_retention_days", 7))),
-            "github_storage": git_cfg,
             "vertex": vertex_cfg,
         }
-        app.cfg_manager.update(new_conf, push_to_github=True)
+        app.cfg_manager.update(new_conf)
+        app.monitor.refresh_netcup()
         app.monitor.refresh_vertex()
-        flash("配置已更新并写入本地/GitHub")
+        flash("配置已更新")
         return redirect(url_for("index"))
 
     @app.route("/api/test_vertex", methods=["GET"])
@@ -156,5 +156,5 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 45671))
     app.run(host="0.0.0.0", port=port)

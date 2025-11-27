@@ -2,7 +2,6 @@ import json
 import os
 from threading import Lock
 from typing import Any, Dict
-from github_storage import GithubStorage
 
 DEFAULT_CONFIG = {
     "soap_wsdl_url": "",
@@ -27,13 +26,6 @@ DEFAULT_CONFIG = {
     },
     "throttle_action": "pause",  # pause | delete
     "log_retention_days": 7,
-    "github_storage": {
-        "enabled": False,
-        "token": "",
-        "repo": "",
-        "branch": "main",
-        "path": "config.json"
-    },
     "vertex": {
         "config_path": "",
         "downloader_key": "",
@@ -57,7 +49,6 @@ class ConfigManager:
         self.path = os.path.join(base_dir, "config.json")
         self._lock = Lock()
         self._config: Dict[str, Any] = {}
-        self.github_storage = GithubStorage()
         self.load()
 
     def _merge_defaults(self, data: Dict[str, Any], default: Dict[str, Any]) -> Dict[str, Any]:
@@ -92,20 +83,10 @@ class ConfigManager:
         with self._lock:
             return json.loads(json.dumps(self._config))
 
-    def update(self, new_conf: Dict[str, Any], push_to_github: bool = False) -> None:
+    def update(self, new_conf: Dict[str, Any]) -> None:
         with self._lock:
             self._config.update(new_conf)
             self.save()
-        if push_to_github and self._config.get("github_storage", {}).get("enabled"):
-            self.github_storage.push_config(self._config)
-
-    def sync_from_github(self) -> None:
-        cfg = self._config.get("github_storage", {})
-        if not cfg.get("enabled"):
-            return
-        data = self.github_storage.pull_config(cfg)
-        if data:
-            self.update(data, push_to_github=False)
 
     def set_last_scp_ip(self, ip: str) -> None:
         with self._lock:

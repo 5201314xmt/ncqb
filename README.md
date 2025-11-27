@@ -6,7 +6,7 @@
 - 通过 Vertex API 优先开关下载器，失败时回退到命令/配置文件改写，避免继续推送到限速节点
 - 通知仅在状态变化时发送，执行失败也会提醒
 - 支持通过 SCP 拉取 qB Web IP（默认端口 9090），也可手动覆盖
-- 配置写入本地 `config.json`，可选自动同步到 GitHub 仓库
+- 配置写入本地 `config.json`
 - Web 面板可在线修改配置、查看日志并设置日志保留天数
 
 ## 一键部署（Debian 12）
@@ -23,11 +23,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python app.py  # 或部署为 systemd/pm2
 ```
-首次运行会自动生成 `config.json`（无需手动创建），也可以在面板填写 GitHub Token/仓库信息后自动推送配置到远端。
+首次运行会自动生成 `config.json`（无需手动创建），可在面板直接维护全部配置。
 
 ## Web 面板
-- 访问 `http://服务器IP:8000`
-- 配置 Netcup 账户、Telegram、qB 登录、SCP 文件路径、GitHub 同步和 Vertex 开关
+- 访问 `http://服务器IP:45671`
+- 配置 Netcup 账户（支持多账号）、Telegram、qB 登录、SCP 文件路径和 Vertex 开关
 - 日志页 `/logs` 支持查看最近 500 行，按配置天数自动清理
 
 ## Vertex 联动
@@ -40,8 +40,8 @@ python app.py  # 或部署为 systemd/pm2
 - 配置文件改写：提供配置文件路径、下载器键名和启用/禁用值，支持 SSH 远程 SFTP 改写。
 - 自定义命令：填写“启用/禁用命令”，本地直接执行；若填写了远程主机信息，则通过 SSH 执行，可配合容器 `docker exec` 或脚本。
 
-## GitHub 配置存储
-启用后填写 `owner/repo`、分支和路径，保存时会通过 GitHub API 写入（需 PAT）。
+## Netcup 账户
+在配置面板中可以添加多个账户，每行填写登录名、密码和可选的备注标签，保存后将轮询所有账户名下的 VPS。
 
 ## 其他
 - 如需 systemd，请创建 service 调用 `.venv/bin/python app.py`

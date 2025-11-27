@@ -17,7 +17,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
                 <h2 class="mb-1">Netcup 限速守护</h2>
-                <p class="mb-0">一键部署 / GitHub 配置 / qB&Vertex 联动</p>
+                <p class="mb-0">一键部署 / 多账户支持 / qB&Vertex 联动</p>
             </div>
             <div class="text-end">
                 <div>总节点：<strong>{{ total }}</strong></div>
@@ -79,9 +79,34 @@
                     <div class="col-md-6">
                         <h5>Netcup</h5>
                         <div class="mb-2"><label class="form-label">WSDL</label><input class="form-control" name="soap_wsdl_url" value="{{ cfg.soap_wsdl_url }}" required></div>
-                        <div class="mb-2"><label class="form-label">登录</label><input class="form-control" name="nc_login" value="{{ cfg.netcup_accounts[0].loginName if cfg.netcup_accounts else '' }}"></div>
-                        <div class="mb-2"><label class="form-label">密码</label><input class="form-control" name="nc_password" value="{{ cfg.netcup_accounts[0].password if cfg.netcup_accounts else '' }}"></div>
-                        <div class="mb-2"><label class="form-label">备注</label><input class="form-control" name="nc_label" value="{{ cfg.netcup_accounts[0].label if cfg.netcup_accounts else '' }}"></div>
+                        <div class="mb-2"><label class="form-label">账户列表</label>
+                            <div id="account-list">
+                                {% set accounts = cfg.netcup_accounts if cfg.netcup_accounts else [None] %}
+                                {% for acc in accounts %}
+                                <div class="border rounded p-3 mb-2 account-item">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-4">
+                                            <label class="form-label">登录</label>
+                                            <input class="form-control" name="nc_login" value="{{ acc.loginName if acc else '' }}" placeholder="用户邮箱/ID">
+                                        </div>
+        
+                                        <div class="col-md-4">
+                                            <label class="form-label">密码</label>
+                                            <input class="form-control" name="nc_password" value="{{ acc.password if acc else '' }}" placeholder="API 密钥">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">备注</label>
+                                            <input class="form-control" name="nc_label" value="{{ acc.label if acc else '' }}" placeholder="可选">
+                                        </div>
+                                        <div class="col-md-1 text-end">
+                                            <button type="button" class="btn btn-outline-danger btn-sm remove-account" title="删除此账户">✕</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="add-account">添加账户</button>
+                        </div>
                         <div class="mb-2"><label class="form-label">轮询秒数</label><input type="number" class="form-control" name="poll_interval_seconds" value="{{ cfg.poll_interval_seconds }}"></div>
                         <div class="mb-2"><label class="form-label">限速动作</label>
                             <select class="form-select" name="throttle_action">
@@ -123,17 +148,6 @@
                         <div class="mb-2"><label class="form-label">保留天数</label><input type="number" class="form-control" name="log_retention_days" value="{{ cfg.log_retention_days }}"></div>
                     </div>
                     <div class="col-md-4">
-                        <h5>GitHub 配置存储</h5>
-                        <div class="form-check mb-1">
-                            <input class="form-check-input" type="checkbox" name="github_enabled" {% if cfg.github_storage.enabled %}checked{% endif %}>
-                            <label class="form-check-label">开启同步</label>
-                        </div>
-                        <div class="mb-2"><label class="form-label">Token</label><input class="form-control" name="github_token" value="{{ cfg.github_storage.token }}"></div>
-                        <div class="mb-2"><label class="form-label">仓库 (owner/repo)</label><input class="form-control" name="github_repo" value="{{ cfg.github_storage.repo }}"></div>
-                        <div class="mb-2"><label class="form-label">分支</label><input class="form-control" name="github_branch" value="{{ cfg.github_storage.branch }}"></div>
-                        <div class="mb-2"><label class="form-label">路径</label><input class="form-control" name="github_path" value="{{ cfg.github_storage.path }}"></div>
-                    </div>
-                    <div class="col-md-4">
                         <h5>Vertex 联动</h5>
                         <div class="mb-2"><label class="form-label">Vertex API 地址</label><input class="form-control" name="vertex_api_url" value="{{ cfg.vertex.api_url }}" placeholder="如 https://vertex.example.com"></div>
                         <div class="mb-2"><label class="form-label">API Key</label><input class="form-control" name="vertex_api_key" value="{{ cfg.vertex.api_key }}" placeholder="在 Vertex 生成"></div>
@@ -161,6 +175,44 @@
     </div>
 </div>
 <script>
+const accountList = document.getElementById('account-list');
+document.getElementById('add-account').addEventListener('click', () => addAccount());
+
+function addAccount(login = '', password = '', label = '') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'border rounded p-3 mb-2 account-item';
+    wrapper.innerHTML = `
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">登录</label>
+                <input class="form-control" name="nc_login" value="${login}" placeholder="用户邮箱/ID">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">密码</label>
+                <input class="form-control" name="nc_password" value="${password}" placeholder="API 密钥">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">备注</label>
+                <input class="form-control" name="nc_label" value="${label}" placeholder="可选">
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-account" title="删除此账户">✕</button>
+            </div>
+        </div>`;
+    accountList.appendChild(wrapper);
+}
+
+accountList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-account')) {
+        const item = e.target.closest('.account-item');
+        if (accountList.children.length > 1) {
+            item.remove();
+        } else {
+            item.querySelectorAll('input').forEach((input) => input.value = '');
+        }
+    }
+});
+
 function testVertex() {
     fetch('/api/test_vertex').then(r => r.json()).then(data => {
         if (!data.ok) {
